@@ -21,9 +21,7 @@ class _MapaPageState extends State<MapaPage> {
 
   @override
   void initState() {
-   
     context.read<MiUbicacionBloc>().iniciarSeguimiento();
-
     super.initState();
   }
 
@@ -46,9 +44,9 @@ class _MapaPageState extends State<MapaPage> {
           
           ),
 
-          // Positioned(
-          //   top: 10,
-          //   child: SearchBar()),
+          Positioned(
+            top: 10,
+            child: SearchBar()),
 
           MarcadorManual(),
 
@@ -72,26 +70,35 @@ class _MapaPageState extends State<MapaPage> {
     if(!state.existeUbicacion) return Center(child: Text('Ubicando ...'));
 
     final mapaBloc = BlocProvider.of<MapaBloc>(context);
+        mapaBloc.add(OnNuevaUbicacion(state.ubicacion));
+        final camaraPosition = new CameraPosition(
+          target: state.ubicacion,
+          zoom: 15, 
+        
+        );
 
-    mapaBloc.add(OnNuevaUbicacion(state.ubicacion));
-
-    final camaraPosition = new CameraPosition(
-      target: state.ubicacion,
-      zoom: 15, 
     
-    );
-    return GoogleMap(
-      initialCameraPosition: camaraPosition,
-      compassEnabled: true,
-      myLocationEnabled: true,
-      myLocationButtonEnabled: false,
-      zoomControlsEnabled: false,
-      onMapCreated: mapaBloc.initMap,
-      polylines: mapaBloc.state.polyLines.values.toSet(),
-      onCameraMove: (cameraPosition){
-        mapaBloc.add(OnMovioMapa(camaraPosition.target));
-      },
-    );
+
+    
+
+    return BlocBuilder<MapaBloc, MapaState>(
+      builder: (BuildContext context, state) { 
+        
+        return GoogleMap(
+          initialCameraPosition: camaraPosition,
+          compassEnabled: true,
+          myLocationEnabled: true,
+          myLocationButtonEnabled: false,
+          zoomControlsEnabled: false,
+          onMapCreated: mapaBloc.initMap,
+          polylines: mapaBloc.state.polyLines.values.toSet(),
+          onCameraMove: (camaraPosition){
+            mapaBloc.add(OnMovioMapa(camaraPosition.target));
+          },
+        );
+     },);
+
+    
 
   }
 

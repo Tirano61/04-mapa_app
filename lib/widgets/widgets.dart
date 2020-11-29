@@ -1,10 +1,18 @@
+import 'dart:ffi';
+
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:mapa_app/bloc/busqueda/busqueda_bloc.dart';
 import 'package:mapa_app/bloc/mapa/mapa_bloc.dart';
 import 'package:mapa_app/bloc/mi_ubicacion/mi_ubicacion_bloc.dart';
+import 'package:mapa_app/helpers/helpers.dart';
 import 'package:mapa_app/models/search_results.dart';
 import 'package:mapa_app/search/search_destination.dart';
+import 'package:mapa_app/services/traffic_service.dart';
+import 'package:polyline/polyline.dart' as Poly;
 
 part 'searchbar.dart';
 part 'btn_ubicacion.dart';
