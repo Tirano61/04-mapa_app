@@ -20,9 +20,6 @@ class SearchBar extends StatelessWidget {
     );
   }
 
-
-
-
  
   Widget buildSearchbar(BuildContext context) {
 
@@ -36,10 +33,11 @@ class SearchBar extends StatelessWidget {
         child: GestureDetector(
           onTap: () async {
             final proximidad = context.read<MiUbicacionBloc>().state.ubicacion;
+            final historial  = context.read<BusquedaBloc>().state.historial;
 
             final SearchResults resultado = await showSearch(
               context: context, 
-              delegate: SearchDestination( proximidad ));
+              delegate: SearchDestination( proximidad, historial ));
             this.retornoBusqueda(context, resultado);
           },
           child: Container(
@@ -62,7 +60,7 @@ class SearchBar extends StatelessWidget {
   }
 
 
-  void retornoBusqueda(BuildContext context, SearchResults result){
+  void retornoBusqueda(BuildContext context, SearchResults result) async  {
 
     if(result.cancelo) return;
     
@@ -72,6 +70,31 @@ class SearchBar extends StatelessWidget {
 
       return;
     }
+
+    //calcular la ruta en valor al result
+    final trasfficService = new TrafficService();
+    final mapaBloc = context.read<MapaBloc>();
+
+    final inicio = context.read<MiUbicacionBloc>().state.ubicacion;
+    final destino = result.position;
+
+    final drivingResponse = await trasfficService.getCoordsInicioYDestino(inicio, destino);
+    final geometry = drivingResponse.routes[0].geometry;
+    final duration = drivingResponse.routes[0].duration;
+    final distancia = drivingResponse.routes[0].distance;
+    final nombreDestino = result.nombredestino;
+
+    final points = Poly.Polyline.Decode(encodedString: geometry, precision: 6);
+    final List<LatLng> rutaCoordenadas = points.decodedCoords.map(
+      (point) => LatLng(point[0], point[1])).toList();
+
+    mapaBloc.add(OnCrearRutaInicioDestino(rutaCoordenadas, distancia, duration,nombreDestino));  
+
+    //Navigator.of(context).pop();
+
+    final busquedaBloc = context.read<BusquedaBloc>();
+    busquedaBloc.add(OnAgregarHistorial(result));
+
 
 
   }

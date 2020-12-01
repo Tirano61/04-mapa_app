@@ -14,8 +14,9 @@ class SearchDestination extends SearchDelegate<SearchResults> {
 
   final TrafficService _trafficService;
   final LatLng proximidad; 
+  final List<SearchResults> historial;
 
-  SearchDestination(this.proximidad) 
+  SearchDestination(this.proximidad, this.historial) 
   : this.searchFieldLabel = 'Buscar',
   this._trafficService = new TrafficService();
 
@@ -68,6 +69,16 @@ class SearchDestination extends SearchDelegate<SearchResults> {
               this.close(context, SearchResults(cancelo: false,manual: true));
             },
           ),
+          ...this.historial.map(
+            (histor) => ListTile(
+              leading: Icon(Icons.history),
+              title: Text(histor.nombredestino),
+              subtitle: Text(histor.descripcion),
+              onTap:() {
+                this. close(context, histor);
+              } ,
+            ),
+          ),
         ],
       );
     }
@@ -82,9 +93,10 @@ class SearchDestination extends SearchDelegate<SearchResults> {
     if(query == 0 ){
       return Container();
     }
+    this._trafficService.getSugerenciasPorQuery(this.query.trim(), proximidad);
 
-    return FutureBuilder(
-      future: this._trafficService.getResultsdoXQuery(this.query.trim(), proximidad),
+    return StreamBuilder(
+      stream: this._trafficService.sugerenciasStream,
       builder: (BuildContext context, AsyncSnapshot<SearchResponse> snapshot) {  
 
         if(!snapshot.hasData){
@@ -107,7 +119,16 @@ class SearchDestination extends SearchDelegate<SearchResults> {
               title: Text(lugar.textEs),
               subtitle: Text(lugar.placeNameEs),
               onTap: (){
-                print(lugar);
+                
+                this. close(context, SearchResults(
+                  cancelo: false,
+                  manual: false,
+                  position:  LatLng(lugar.center[1], lugar.center[0]),
+                  nombredestino: lugar.textEs,
+                  descripcion: lugar.placeNameEs
+
+                ));
+
               },
             );
           },

@@ -92,6 +92,7 @@ class _MapaPageState extends State<MapaPage> {
           zoomControlsEnabled: false,
           onMapCreated: mapaBloc.initMap,
           polylines: mapaBloc.state.polyLines.values.toSet(),
+          markers: mapaBloc.state.markers.values.toSet(),
           onCameraMove: (camaraPosition){
             mapaBloc.add(OnMovioMapa(camaraPosition.target));
           },

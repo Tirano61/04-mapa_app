@@ -3,7 +3,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/widgets.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:mapa_app/helpers/helpers.dart';
 import 'package:mapa_app/themes/uber_map_theme.dart';
 import 'package:meta/meta.dart';
 
@@ -77,9 +79,58 @@ class MapaBloc extends Bloc<MapaEvent, MapaState> {
       final currentsPolylines = state.polyLines;
       currentsPolylines['mi_ruta_destino'] = this._miRutaDestino;
 
-     yield state.copyWith(
+      //Icono inicio
+      // final icon = await getAssetImageMarker();
+      final icon = await getMarkerInicioIcon(event.duracion.toInt());
+      // final iconNetwork = await getNetworkImageMarker();
+      final iconNetwork = await getMarkerDestinoIcon(event.nombreDestino, event.distancia);
+
+        //Marcadores
+      final markerInicio = new Marker(
+        anchor: Offset(0, 1),
+        markerId: MarkerId('inicio'),
+        position: event.rutaCoordenadas[0],
+        icon: icon,
+        infoWindow: InfoWindow(
+          title: 'Mi ubicacion',
+          snippet: 'Duración recorrido : ${(event.duracion / 60).floor()} minutos',
+          
+        )
+      );
+
+
+      double kilometros = event.distancia / 1000;
+      kilometros = (kilometros * 100).floor().toDouble();
+      kilometros = kilometros / 100;
+
+      final markerDestino = new Marker(
+        anchor: Offset(0, 1),
+        markerId: MarkerId('destino'),
+        position: event.rutaCoordenadas[event.rutaCoordenadas.length -1],
+        icon: iconNetwork,
+        infoWindow: InfoWindow(
+        title: event.nombreDestino,
+        snippet: 'Distancia destino : ${(kilometros)} Km',
+
+        ),
+      );
+
+      final newMarker = {...state.markers};
+      newMarker['inicio'] = markerInicio;
+      newMarker['destino'] = markerDestino;
+
+
+      // Future.delayed(Duration(milliseconds: 300)).then(
+      //   (value){
+      //     _mapController.showMarkerInfoWindow(MarkerId('destino'));
+      //   });
+     
+      yield state.copyWith(
        polyLines: currentsPolylines,
        //Marcadores
+       markers: newMarker,
+       
+       
      );
    }
 
@@ -112,11 +163,14 @@ class MapaBloc extends Bloc<MapaEvent, MapaState> {
     if( state.seguirUbicacion ){
       moverCamara(event.ubicacion);
     }
-    final List<LatLng> points = [...this._miRuta.points, event.ubicacion];
-    this._miRuta = this._miRuta.copyWith(pointsParam: points);
+    final List<LatLng> rutaCoordenadas = [...this._miRuta.points, event.ubicacion];
+    this._miRuta = this._miRuta.copyWith(pointsParam: rutaCoordenadas);
 
     final currentPolylines = state.polyLines;
     currentPolylines['mi-ruta'] = this._miRuta;
+
+  
+
 
     yield state.copyWith(polyLines: currentPolylines);
   }

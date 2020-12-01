@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mapa_app/helpers/debouncer.dart';
 import 'package:mapa_app/models/driving_response.dart';
+import 'package:mapa_app/models/reverse_query_response.dart';
 import 'package:mapa_app/models/search_response.dart';
 
 class TrafficService {
@@ -20,7 +21,7 @@ class TrafficService {
 
 
   final _dio = new Dio();
-  final debouncer = Debouncer<String>(duration: Duration(milliseconds: 2000 ));
+  final debouncer = Debouncer<String>(duration: Duration(milliseconds: 400 ));
 
   final StreamController<SearchResponse> _sugerenciasStreamController = new StreamController<SearchResponse>.broadcast();
 
@@ -32,10 +33,6 @@ class TrafficService {
 
 
   Future<DrivingResponse> getCoordsInicioYDestino(LatLng inicio, LatLng destino) async {
-
-
-    print('inicio ${inicio}');
-    print('destino ${destino}');
 
     final coordString = '${ inicio.longitude },${ inicio.latitude };${ destino.longitude },${ destino.latitude }';
     final url = '${ this._baseUrlDir }/mapbox/driving/$coordString';
@@ -79,19 +76,33 @@ class TrafficService {
 
   void getSugerenciasPorQuery( String busqueda, LatLng proximidad ) {
 
-  debouncer.value = '';
-  debouncer.onValue = ( value ) async {
-    final resultados = await this.getResultsdoXQuery(value, proximidad);
-    this._sugerenciasStreamController.add(resultados);
-  };
+    debouncer.value = '';
+    debouncer.onValue = ( value ) async {
+      final resultados = await this.getResultsdoXQuery(value, proximidad);
+      this._sugerenciasStreamController.add(resultados);
+    };
 
-  final timer = Timer.periodic(Duration(milliseconds: 200), (_) {
-    debouncer.value = busqueda;
-  });
+    final timer = Timer.periodic(Duration(milliseconds: 200), (_) {
+      debouncer.value = busqueda;
+    });
 
-  Future.delayed(Duration(milliseconds: 201)).then((_) => timer.cancel()); 
+    Future.delayed(Duration(milliseconds: 201)).then((_) => timer.cancel()); 
 
-}
+  }
+
+  Future<ReverseQueryResponse> getCoordenadasInfo(LatLng destinocoords) async {
+    
+    final url = '${ this._baseUrlGeo }/mapbox.places/${ destinocoords.longitude },${ destinocoords.latitude }.json';
+
+    final resp = await this._dio.get(url, queryParameters: {
+      'access_token': _apiKey,
+      'language': 'es',
+    });
+
+    final data = reverseQueryResponseFromJson(resp.data);
+
+    return data;
+  }
 
 
 }
